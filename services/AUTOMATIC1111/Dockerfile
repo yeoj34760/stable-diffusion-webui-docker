@@ -14,12 +14,7 @@ RUN . /clone.sh CodeFormer https://github.com/sczhou/CodeFormer.git c5b4593074ba
 RUN . /clone.sh BLIP https://github.com/salesforce/BLIP.git 48211a1594f1321b00f14c9f7a5b4813144b2fb9
 RUN . /clone.sh k-diffusion https://github.com/crowsonkb/k-diffusion.git 5b3af030dd83e0297272d861c19477735d0317ec
 RUN . /clone.sh clip-interrogator https://github.com/pharmapsychotic/clip-interrogator 2486589f24165c8e3b303f84e9dbbea318df83e8
-
-
-FROM alpine:3.17 as xformers
-RUN apk add --no-cache aria2
-RUN aria2c -x 5 --dir / --out wheel.whl 'https://github.com/AbdBarho/stable-diffusion-webui-docker/releases/download/6.0.0/xformers-0.0.21.dev544-cp310-cp310-manylinux2014_x86_64-pytorch201.whl'
-
+RUN . /clone.sh generative-models https://github.com/Stability-AI/generative-models.git 081e0d462910bb0f6fe4ea03ad90291d23fc0197
 
 FROM python:3.10.9-slim
 
@@ -28,7 +23,7 @@ ENV DEBIAN_FRONTEND=noninteractive PIP_PREFER_BINARY=1
 RUN --mount=type=cache,target=/var/cache/apt \
   apt-get update && \
   # we need those
-  apt-get install -y fonts-dejavu-core rsync git jq moreutils aria2 \
+  apt-get install --fix-missing -y fonts-dejavu-core rsync git jq moreutils aria2 \
   # extensions needs those
   ffmpeg libglfw3-dev libgles2-mesa-dev pkg-config libcairo2 libcairo2-dev build-essential
 
@@ -43,13 +38,11 @@ RUN --mount=type=cache,target=/cache --mount=type=cache,target=/root/.cache/pip 
 RUN --mount=type=cache,target=/root/.cache/pip \
   git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git && \
   cd stable-diffusion-webui && \
-  git reset --hard 20ae71faa8ef035c31aa3a410b707d792c8203a3 && \
+  git reset --hard 394ffa7b0a7fff3ec484bcd084e673a8b301ccc8 && \
   pip install -r requirements_versions.txt
-
-RUN --mount=type=cache,target=/root/.cache/pip  \
-  --mount=type=bind,from=xformers,source=/wheel.whl,target=/xformers-0.0.21.dev544-cp310-cp310-manylinux2014_x86_64.whl \
-  pip install /xformers-0.0.21.dev544-cp310-cp310-manylinux2014_x86_64.whl
-
+  
+RUN --mount=type=cache,target=/root/.cache/pip \
+  pip install xformers==0.0.21.dev575
 ENV ROOT=/stable-diffusion-webui
 
 
@@ -71,7 +64,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN apt-get -y install libgoogle-perftools-dev && apt-get clean
 ENV LD_PRELOAD=libtcmalloc.so
 
-ARG SHA=394ffa7b0a7fff3ec484bcd084e673a8b301ccc8
+ARG SHA=a3ddf464a2ed24c999f67ddfef7969f8291567be
 RUN --mount=type=cache,target=/root/.cache/pip \
   cd stable-diffusion-webui && \
   git fetch && \
